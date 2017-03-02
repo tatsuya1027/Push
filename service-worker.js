@@ -3,23 +3,16 @@
 self.addEventListener('push', function(event) {
   console.log('Received a push message', event);
 
-  // サンプルでは固定のメッセージを通知するようにしています。
-  // 動的にユーザーごとにメッセージを変えたい場合は、
-  // ペイロードの暗号化を行うか、FetchAPIで動的に情報を取得する必要があります。
-  var title = '新着記事のお知らせです';
-  var body = 'ServiceWorkerの記事を公開しました';
-  var icon = 'ics_logo_512x512.png';
+  var title = 'メッセージのタイトル';
+  var body = 'プッシュメッセージを受信';
+  var icon = '/demo/push/non-data/images/icon-192x192.png';
   var tag = 'simple-push-demo-notification-tag';
-  var url = 'https://ics.media/entry/11763';
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body: body,
       icon: icon,
-      tag: tag,
-      data: {
-        url: url
-      }
+      tag: tag
     })
   );
 });
@@ -28,11 +21,6 @@ self.addEventListener('notificationclick', function(event) {
   console.log('On notification click: ', event.notification.tag);
   event.notification.close();
 
- var notoficationURL = "/"
-  if (event.notification.data.url) {
-    notoficationURL = event.notification.data.url
-  }
-  
   event.waitUntil(clients.matchAll({
     type: 'window'
   }).then(function(clientList) {
@@ -43,7 +31,7 @@ self.addEventListener('notificationclick', function(event) {
       }
     }
     if (clients.openWindow) {
-      return clients.openWindow(notoficationURL);
+      return clients.openWindow('/');
     }
   }));
 });

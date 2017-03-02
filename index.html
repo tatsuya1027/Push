@@ -1,90 +1,165 @@
 <!DOCTYPE html>
- <html>
- <head>
-     <meta charset="utf-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1">
-     <!-- ↓サンプル表示用に読み込んでいるJS/CSSです -->
-     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
-     <script src="https://code.jquery.com/jquery-2.2.1.min.js"></script>
-     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-     <!-- ↑サンプル表示用に読み込んでいるJS/CSSです -->
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title></title>
+  <meta charset="utf-8" />
+  <link rel="manifest" href="manifest.json">
+  <script type="text/javascript">
 
-     <!-- ↓PushnateSDKで必要なファイルです -->
-     <script src="https://s.pushnate.com/pushnateWorker.js"></script>
-     <link rel="manifest" href="/manifest.json">
-     <!-- ↑PushnateSDKで必要なファイルです -->
- </head>
+    var API_KEY = 'AIzaSyAA421qBy9lIvzixMJKUj5LBVjqQhqckv8';
+    var GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send';
 
- <body>
- <div class="container">
+    function onLoad() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js').then(initialiseState);
+      } else {
+        window.Demo.debug.log('Service workers aren\'t supported in this browser.');
+      }
+    }
+    
+    function initialiseState() {
+      if (!('showNotification' in ServiceWorkerRegistration.prototype)) {
+        window.Demo.debug.log('Notifications aren\'t supported.');
+        return;
+      }
 
-     <div class="alert alert-warning alert-dismissible alert-unregister" role="alert" style="display:none;">
-         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-         設定を解除しました
-     </div>
+      if (Notification.permission === 'denied') {
+        window.Demo.debug.log('The user has blocked notifications.');
+        return;
+      }
 
-     <div class="alert alert-info alert-dismissible alert-register" role="alert" style="display:none;">
-         <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-         設定しました
-     </div>
+      if (!('PushManager' in window)) {
+        window.Demo.debug.log('Push messaging isn\'t supported.');
+        return;
+      }
 
-     <h3>Pushnate Webプッシュ通知 デモ</h3>
+      navigator.serviceWorker.ready.then(ServiceWorkerRegistInit);
+    }
 
-     <p>プッシュ通知：<span id="register-status"></span></p>
+    function ServiceWorkerRegistInit(serviceWorkerRegistration) {
+      serviceWorkerRegistration.pushManager.getSubscription().then(SubscriptionProcInit);
+    }
 
-     <div class="btn-group" role="group">
-         <button type="button" class="btn btn-default btn-unregister">解除する</button>
-         <button type="button" class="btn btn-info btn-register">設定する</button>
-     </div>
+    function SubscriptionProcInit(subscription) {
+      if (!subscription) {
+        return;
+      }
 
-     <div id="myModal" class="modal fade" tabindex="-1" role="dialog">
-         <div class="modal-dialog">
-             <div class="modal-content">
-                 <div class="modal-header">
-                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                     <h4 class="modal-title">プッシュ通知設定を行いますか？</h4>
-                 </div>
-                 <div class="modal-body">
-                     <p>最新ニュース、おすすめコンテンツをプッシュ通知します。通知設定を行いますか？</p>
-                 </div>
-                 <div class="modal-footer">
-                     <button type="button" class="btn btn-default" data-dismiss="modal">いいえ</button>
-                     <button type="button" class="btn btn-info btn-register">はい</button>
-                 </div>
-             </div>
-         </div>
-     </div>
- </div>
- <script>
-     var Pushnate = Pushnate || [];
+      sendSubscriptionToServer(subscription);
+      /* Push が利用可能 */
+    }
 
-     $(function() {
 
-         // ユーザのステータスを取得
-         Pushnate.push(["userStatus", function() {
-             console.log("installed");
-             $('#register-status').text('設定済み');
-         }, function() {
-             $('#register-status').text('未設定');
-             $('#myModal').modal('show');
-             console.log("un installed");
-         }]);
+    /* Subscribe */
+    function SubscribePushNotification() {
+      navigator.serviceWorker.ready.then(ServiceWorkerRegist);
+    }
 
-         $('.btn-register').on('click', function() {
-             // プッシュ通知を有効化
-             Pushnate.push(["init", { path: "/", site_id: "668910398106" }]);
-             $('#myModal').modal('hide');
-             $('.alert-register').show();
-         });
+    function ServiceWorkerRegist(serviceWorkerRegistration) {
+      /* Subscription 処理の開始前処理を記述 */
 
-         $('.btn-unregister').on('click', function() {
-             // プッシュ通知を無効化
-             Pushnate.push(["unregister", function() {
-                 $('.alert-unregister').show();
-             }]);
-         });
+      var subscribe = serviceWorkerRegistration.pushManager.subscribe({ userVisibleOnly: true });
+      subscribe.then(SubscriptionProc);
+    }
 
-     });
- </script>
- </body>
- </html>
+    function SubscriptionProc(subscription) {
+      /* Subscription 完了時の処理を記述 */
+
+      return sendSubscriptionToServer(subscription);
+    }
+
+    function sendSubscriptionToServer(subscription) {
+      console.log('TODO: Implement sendSubscriptionToServer()');
+      var mergedEndpoint = endpointWorkaround(subscription);
+
+      /* サーバーに各種情報を送信 (今回は画面表示のため、処理なし)*/
+
+      /* 画面表示 */
+      showCurlCommand(mergedEndpoint);
+      showSubscriptionInfo(subscription);
+    }
+
+    /* エンドポイントの情報生成 */
+    function endpointWorkaround(pushSubscription) {
+      if (pushSubscription.endpoint.indexOf('https://android.googleapis.com/gcm/send') !== 0) {
+        return pushSubscription.endpoint;
+      }
+
+      var mergedEndpoint = pushSubscription.endpoint;
+      if (pushSubscription.subscriptionId &&
+        pushSubscription.endpoint.indexOf(pushSubscription.subscriptionId) === -1) {
+        mergedEndpoint = pushSubscription.endpoint + '/' +
+          pushSubscription.subscriptionId;
+      }
+      return mergedEndpoint;
+    }
+
+
+    /* UnSubscribe */
+
+    function UnSubscribePushNotification() {
+      navigator.serviceWorker.ready.then(ServiceWorkerUnregist);
+    }
+
+    function ServiceWorkerUnregist(serviceWorkerRegistration) {
+      /* UnSubscription 処理の開始前処理を記述 */
+
+      var subscribe = serviceWorkerRegistration.pushManager.getSubscription();
+      subscribe.then(UnSubscriptionProc);
+    }
+
+    function UnSubscriptionProc(subscription) {
+      if (!subscription) {
+        return;
+      }
+      subscription.unsubscribe().then(UnSubscriptionComplete);
+    }
+
+    function UnSubscriptionComplete() {
+      /* UnSubscription 処理完了後の処理を記述 */
+    }
+
+
+
+    /* 情報の画面表示 */
+    function showCurlCommand(mergedEndpoint) {
+      if (mergedEndpoint.indexOf(GCM_ENDPOINT) !== 0) {
+        window.Demo.debug.log('This browser isn\'t currently ' +
+          'supported for this demo');
+        return;
+      }
+
+      var endpointSections = mergedEndpoint.split('/');
+      var subscriptionId = endpointSections[endpointSections.length - 1];
+
+      var curlCommand = 'curl --header "Authorization: key=' + API_KEY +
+        '" --header Content-Type:"application/json" ' + GCM_ENDPOINT +
+        ' -d "{\\"registration_ids\\":[\\"' + subscriptionId + '\\"]}"';
+
+      var frame = document.getElementById("command");
+      frame.innerText = curlCommand;
+    }
+
+    function showSubscriptionInfo(subscription) {
+      console.log(subscription);
+      console.log(subscription.getKey('p256dh'));
+      console.log(subscription.getKey('auth'));
+
+      var frame = document.getElementById("info");
+      frame.innerHTML = "Endpoint : " + subscription.endpoint + "<br/>";
+      frame.innerHTML += "p256dh Key : " + btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))) + "<br/>";
+      frame.innerHTML += "Authentication Secret : " + btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')))) + "<br/>";
+    }
+  </script>
+</head>
+<body onload="onLoad();">
+  <p>Demo Page</p>
+  <a href="#" onclick="SubscribePushNotification();">プッシュ通知の購読</a><br />
+  <a href="#" onclick="UnSubscribePushNotification();">プッシュ通知の購読解除</a><br />
+  <hr />
+  <p id="command"></p>
+  <hr />
+  <p id="info"></p>
+</body>
+</html>
